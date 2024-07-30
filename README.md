@@ -14,5 +14,5 @@ This project automates the process of creating shipping labels and fulfilling Sh
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/yourrepository.git
+   git clone https://github.com/gericke98/shameless-order_automation.git
    ```

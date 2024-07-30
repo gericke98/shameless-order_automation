@@ -7,7 +7,7 @@ import os
 load_dotenv()
 shop_url = os.getenv('SHOPIFY_SHOP_URL')
 token = os.getenv('SHOPIFY_TOKEN')
-# Defino un diccionario para los cambios de nombres
+# Defino un diccionario para los cambios de nombres --> Transformo el nombre de la web en el nombre del almacén
 replacementsName = {
     'WITHOUT SHAME CREWNECK': '1:MORADO',
     'STARBOY SWEATSHIRT': '2:NEGRO',

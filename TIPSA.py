@@ -4,7 +4,7 @@ import os
 from datetime import datetime, timezone, timedelta
 from SHOPIFY import limpiar_string
 from dotenv import load_dotenv
-import os
+import xml.etree.ElementTree as ET
 
 # Load environment variables from .env file
 load_dotenv()
@@ -181,7 +181,7 @@ def parse_label_response(response_content):
         return None
     
 def estado_envio_request(id_value,albaran_value):
-    url = URL_DEV_ACTION+'ConsEnvEstados'
+    url = URL_PROD_ACTION+'ConsEnvEstados'
     headers = {
         'Content-Type': 'text/xml; charset=utf-8',
     }
@@ -240,6 +240,31 @@ def estado_envios_fecha_request(id_value,fecha):
         print(f'Error sending SOAP request: {e}')
         return None
     
+def parse_estado_envio_request(response_content):
+    # Parse the XML
+    root = ET.fromstring(response_content)
+
+    # Extract the embedded XML within strEnvEstados
+    embedded_xml = root.find('.//{http://tempuri.org/}strEnvEstados').text
+
+    # Replace HTML-like entities with actual characters
+    embedded_xml = embedded_xml.replace('&lt;', '<').replace('&gt;', '>')
+
+    # Parse the embedded XML
+    embedded_root = ET.fromstring(embedded_xml)
+
+    # Extract the required elements
+    results = []
+    for env_estado in embedded_root.findall('.//ENV_ESTADOS'):
+        tipo_est = env_estado.get('V_COD_TIPO_EST')
+        fec_hora_alta = env_estado.get('D_FEC_HORA_ALTA')
+        results.append({
+            "V_COD_TIPO_EST": tipo_est,
+            "D_FEC_HORA_ALTA": fec_hora_alta
+        })
+
+    return results
+
 def save_id_to_file(id_value):
     with open(ID_FILE_PATH, 'w') as file:
         file.write(id_value)

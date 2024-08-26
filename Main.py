@@ -17,8 +17,10 @@ transport_company = os.getenv('TRACKING_COMPANY')
 location_id = main_location()['locations'][0]['id']
 
 # Hago la llamada a TIPSA para tener un ID: OJO que dura 10 minutos
+print('Haciendo login...')
 response_content = login_request()
 # Extraigo el ID del response
+print('Parseando login...')
 extracted_id = parse_login_response(response_content)
 # Me aseguro de que tenemos ID
 if extracted_id:
@@ -29,7 +31,7 @@ if extracted_id:
     df_orders = pd.read_csv(path_csv_orders)
     for order in resp['orders']:
         if((order['fulfillment_status'] != 'fulfilled') & (order['name'] not in df_orders['order_number'].unique())):
-            if(order['shipping_address']['country'] == 'Spain'):
+            if((order['shipping_address']['country'] == 'Spain' )):
                 print(order['name'])
                 final_products = extract_products(order)
                 subsequent_response = create_label_request(extracted_id,order,final_products)
@@ -76,7 +78,7 @@ if extracted_id:
                         df_orders_final = df_orders_final.drop_duplicates(subset='order_number',keep='first').reset_index(drop=True)
                         df_orders_final.to_csv(path_csv_orders,index=False)
             else:
-                if(order['shipping_address']['country'] == 'Germany'):
+                if((order['shipping_address']['country'] == 'Germany')| (order['shipping_address']['country'] == 'Portugal')):
                     # Caso de internacional en Germany
                     print(order['name'])
                     final_products = extract_products(order)

@@ -1,4 +1,4 @@
-from TIPSA import login_request,parse_login_response,create_label_request,parse_label_response,create_label_request_int,create_label_request_it
+from TIPSA import login_request,parse_login_response,create_label_request,parse_label_response,create_label_request_int,create_label_request_it,create_label_request_pt
 from SHOPIFY import main,fulfillid,main_location,fulfillorder,extract_products
 import pandas as pd
 from dotenv import load_dotenv
@@ -78,14 +78,16 @@ if extracted_id:
                         df_orders_final = df_orders_final.drop_duplicates(subset='order_number',keep='first').reset_index(drop=True)
                         df_orders_final.to_csv(path_csv_orders,index=False)
             else:
-                if((order['shipping_address']['country'] == 'Germany')| (order['shipping_address']['country'] == 'Italy')):
+                if((order['shipping_address']['country'] == 'Germany')| (order['shipping_address']['country'] == 'Italy') | (order['shipping_address']['country'] == 'Portugal')):
                     # Caso de internacional en Germany
                     print(order['name'])
                     final_products = extract_products(order)
                     if(order['shipping_address']['country'] == 'Germany'):
                         subsequent_response = create_label_request_int(extracted_id,order,final_products)
-                    else:
+                    elif(order['shipping_address']['country'] == 'Italy'):
                         subsequent_response = create_label_request_it(extracted_id,order,final_products)
+                    else:
+                        subsequent_response = create_label_request_pt(extracted_id,order,final_products)
                     if subsequent_response:
                         # Agrego la nueva orden al CSV
                         list_new.append(order['name'])

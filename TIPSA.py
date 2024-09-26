@@ -218,6 +218,64 @@ def create_label_request_it(id_value,order,products):
         print(f'Error sending SOAP request: {e}')
         return None
     
+def create_label_request_pt(id_value,order,products):
+    url = URL_PROD_ACTION+'GrabaEnvio24'
+    headers = {
+        'Content-Type': 'text/xml; charset=utf-8',
+    }
+    if(order['shipping_address']['address2'] != None):
+        direccion = order['shipping_address']['address1'] + ';'+ order['shipping_address']['address2']
+    else:
+        direccion = order['shipping_address']['address1']
+    # Extraigo el código postal y lo pongo en formato TIPSA
+    zipCode = str(order['shipping_address']['zip'])
+    zipCodeTipsa = '6'+ zipCode.split('-')[0]
+
+    soap_body = f"""
+    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/">
+       <soapenv:Header>
+          <tem:ROClientIDHeader>
+             <tem:ID>{id_value}</tem:ID>
+          </tem:ROClientIDHeader>
+       </soapenv:Header>
+       <soapenv:Body>
+          <tem:WebServService___GrabaEnvio24>
+             <tem:strCodAgeCargo>{AGENCIA}</tem:strCodAgeCargo>
+             <tem:strCodAgeOri>{AGENCIA}</tem:strCodAgeOri>
+             <tem:strCodCli>{CLIENTE}</tem:strCodCli>
+             <tem:dtFecha>{datetime.now(timezone(timedelta(hours=1))).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + "+01:00"}</tem:dtFecha>
+             <tem:strCodTipoServ>92</tem:strCodTipoServ>
+             <tem:strCPDes>{zipCodeTipsa}</tem:strCPDes>
+             <tem:strPobDes>{order['shipping_address']['city']}</tem:strPobDes>
+             <tem:strNomDes>{limpiar_string(order['shipping_address']['name'])}</tem:strNomDes>
+             <tem:strDirDes>{direccion}</tem:strDirDes>
+             <tem:strCPOri>28232</tem:strCPOri>
+             <tem:strPobOri>Las Rozas de Madrid</tem:strPobOri>
+             <tem:strNomOri>CORISA TEXTIL S.L. (SHAMELESS)</tem:strNomOri>
+             <tem:strDirOri>Calle Bristol, 14b</tem:strDirOri>
+             <tem:dPesoOri>0</tem:dPesoOri>
+             <tem:intPaq>1</tem:intPaq>
+             <tem:boInsert>1</tem:boInsert>
+             <strObs><![CDATA[{products}]]></strObs>
+             <tem:strContenido>Prenda textil de 100% algodon</tem:strContenido>
+             <tem:dAltoOri>0</tem:dAltoOri>
+             <tem:dAnchoOri>35</tem:dAnchoOri>
+             <tem:dLargoOri>45</tem:dLargoOri>
+             <tem:strCodPais>IT</tem:strCodPais>
+             <tem:strTlfDes>{order['shipping_address']['phone']}</tem:strTlfDes>
+          </tem:WebServService___GrabaEnvio24>
+       </soapenv:Body>
+    </soapenv:Envelope>
+    """
+
+    try:
+        response = requests.post(url, data=soap_body, headers=headers)
+        response.raise_for_status()
+        return response.content
+    except requests.exceptions.RequestException as e:
+        print(f'Error sending SOAP request: {e}')
+        return None
+    
 def parse_label_response(response_content):
     try:
         root = etree.fromstring(response_content)

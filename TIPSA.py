@@ -18,6 +18,12 @@ AGENCIA = os.getenv('AGENCIA')
 CLIENTE = os.getenv('CLIENTE')
 CONTRASENA = os.getenv('CONSTRASENA')
 
+def get_address(order):
+    """Concatenates address lines if present."""
+    address1 = order['shipping_address']['address1']
+    address2 = order['shipping_address']['address2']
+    return f"{address1};{address2}" if address2 else address1
+
 def login_request():
     url = URL_PROD_LOGIN
     headers = {
@@ -61,15 +67,59 @@ def parse_login_response(response_content):
         print(f'Error parsing SOAP response: {e}')
         return None
     
+def get_soap_body_request(id_value, order, products, country_code=None):
+    """Generates SOAP body for label request based on country."""
+    direccion = get_address(order)
+    tipo_servicio = '48' if order['shipping_address']['country'] == 'Spain' else '92'
+    zip_code = order['shipping_address']['zip']
+    
+    # Specific transformations for Portugal zip code
+    if order['shipping_address']['country'] == 'Portugal':
+        zip_code = '6' + zip_code.split('-')[0]
+
+    international_element_1 = f"<tem:strCodPais>{country_code}</tem:strCodPais>" if country_code else ""
+    
+    return f"""
+    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/">
+       <soapenv:Header>
+          <tem:ROClientIDHeader>
+             <tem:ID>{id_value}</tem:ID>
+          </tem:ROClientIDHeader>
+       </soapenv:Header>
+       <soapenv:Body>
+          <tem:WebServService___GrabaEnvio24>
+             <tem:strCodAgeCargo>{AGENCIA}</tem:strCodAgeCargo>
+             <tem:strCodAgeOri>{AGENCIA}</tem:strCodAgeOri>
+             <tem:strCodCli>{CLIENTE}</tem:strCodCli>
+             <tem:dtFecha>{datetime.now(timezone(timedelta(hours=1))).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + "+01:00"}</tem:dtFecha>
+             <tem:strCodTipoServ>{tipo_servicio}</tem:strCodTipoServ>
+             <tem:strCPDes>{zip_code}</tem:strCPDes>
+             <tem:strPobDes>{order['shipping_address']['city']}</tem:strPobDes>
+             <tem:strNomDes>{limpiar_string(order['shipping_address']['name'])}</tem:strNomDes>
+             <tem:strDirDes>{direccion}</tem:strDirDes>
+             <tem:strCPOri>28232</tem:strCPOri>
+             <tem:strPobOri>Las Rozas de Madrid</tem:strPobOri>
+             <tem:strNomOri>CORISA TEXTIL S.L. (SHAMELESS)</tem:strNomOri>
+             <tem:strDirOri>Calle Bristol, 14b</tem:strDirOri>
+             <tem:dPesoOri>0</tem:dPesoOri>
+             <tem:intPaq>1</tem:intPaq>
+             <tem:boInsert>1</tem:boInsert>
+             <strObs><![CDATA[{products}]]></strObs>
+             <tem:strTlfDes>{order['shipping_address']['phone']}</tem:strTlfDes>
+             {country_element}
+          </tem:WebServService___GrabaEnvio24>
+       </soapenv:Body>
+    </soapenv:Envelope>
+    """
+
 def create_label_request(id_value,order,products):
     url = URL_PROD_ACTION+'GrabaEnvio24'
     headers = {
         'Content-Type': 'text/xml; charset=utf-8',
     }
-    if(order['shipping_address']['address2'] != None):
-        direccion = order['shipping_address']['address1'] + ';'+ order['shipping_address']['address2']
-    else:
-        direccion = order['shipping_address']['address1']
+    direccion = get_address(order)
+    print(direccion)
+
     soap_body = f"""
     <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/">
        <soapenv:Header>

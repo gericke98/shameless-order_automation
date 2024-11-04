@@ -27,6 +27,8 @@ replacementsName = {
     'WITHOUT SHAME ORANGE ORGANIC TEE': '15:PEGATINA NARANJA',
     'WITHOUT SHAME BLUE ORGANIC TEE': '16:PEGATINA AZUL',
     'MENTALITY ORGANIC TEE':'17:PEGATINA ROJA',
+    'TOKYO EDITION TEE':'TOKYO',
+    'PEKIN EDITION TEE':'PEKIN',
 }
 
 # Defino un diccionario para los cambios de talla
